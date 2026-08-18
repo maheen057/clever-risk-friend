@@ -1,24 +1,60 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ClientOnly } from "@tanstack/react-router";
+import { Suspense, lazy } from "react";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
+const SsaApp = lazy(() =>
+  import("../ssa/App.jsx").then((m) => ({ default: m.default })),
+);
+
 export const Route = createFileRoute("/")({
   component: Index,
+  head: () => ({
+    meta: [
+      { title: "Orbital Risk Intelligence — Live Space Debris Visualization" },
+      {
+        name: "description",
+        content:
+          "Real-time 3D space situational awareness: hover the globe to identify satellites and debris, track orbital bands, and forecast collision risk from CelesTrak data.",
+      },
+      { property: "og:title", content: "Orbital Risk Intelligence — Live Space Debris Visualization" },
+      {
+        property: "og:description",
+        content:
+          "Real-time 3D space situational awareness: hover the globe to identify satellites and debris, track orbital bands, and forecast collision risk from CelesTrak data.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function Loading() {
   return (
     <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#02030a",
+        color: "#9fd7ee",
+        fontFamily: "Inter, system-ui, sans-serif",
+        letterSpacing: "0.18em",
+        textTransform: "uppercase",
+        fontSize: 12,
+      }}
     >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+      Initializing orbital telemetry…
     </div>
+  );
+}
+
+function Index() {
+  return (
+    <ClientOnly fallback={<Loading />}>
+      <Suspense fallback={<Loading />}>
+        <SsaApp />
+      </Suspense>
+    </ClientOnly>
   );
 }
