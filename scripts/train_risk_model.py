@@ -72,7 +72,7 @@ mean, std = X.mean(axis=0), X.std(axis=0)
 Xs = (X - mean) / std
 
 Xtr, Xte, ytr, yte = train_test_split(Xs, y, test_size=0.2, random_state=7, stratify=y)
-clf = LogisticRegression(max_iter=3000, C=1.0, multi_class="multinomial")
+clf = LogisticRegression(max_iter=3000, C=1.0)
 clf.fit(Xtr, ytr)
 
 pred = clf.predict(Xte)

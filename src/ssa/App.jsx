@@ -10,6 +10,7 @@ import {
   ChevronRight,
   ClipboardList,
   Cpu,
+  Brain,
   DatabaseZap,
   Download,
   FileText,
@@ -52,6 +53,7 @@ import { ControlPanel } from "./components/UI/ControlPanel";
 import { TelemetryStrip } from "./components/UI/TelemetryStrip";
 import { TimelinePanel } from "./components/UI/TimelinePanel";
 import { formatNumber, percent } from "./utils/orbitalMath";
+import { classifyEvents, mlRiskDistribution, RISK_MODEL_INFO } from "./ml/riskClassifier";
 import {
   getObjectTypeLabel,
   getObjectTypeKey,
@@ -160,7 +162,9 @@ export default function App() {
         // Validate and filter events: remove self-pairs, duplicate pairs, etc.
         const validatedEvents = validateAndFilterEvents(rawEvents);
         // Apply type-aware operational prioritization
-        const localEvents = applyOperationalPrioritization(validatedEvents);
+        // ML risk classification: attaches ml_risk_level / ml_confidence /
+        // ml_probabilities / ml_contributors to every screened event.
+        const localEvents = classifyEvents(applyOperationalPrioritization(validatedEvents));
         // Log pair type distribution for verification
         logPairTypeDistribution(localEvents);
         setSnapshot(catalog);
@@ -658,6 +662,11 @@ function CollisionPage({ event, events, selectEvent, toggleWatchlist, watchlist,
             </Panel>
           </section>
           <section className="split-grid">
+            <Panel title="ML Risk Classification" icon={Brain}>
+              <MlRiskCard event={event} />
+            </Panel>
+          </section>
+          <section className="split-grid">
             <Panel title="Object Information" icon={Satellite}>
               <ObjectPair event={event} toggleWatchlist={toggleWatchlist} watched={watched} onShowInGlobe={onShowInGlobe} />
             </Panel>
@@ -724,6 +733,13 @@ function AnalyticsPage({ analytics, events, snapshot }) {
         </Panel>
       </section>
       <section className="split-grid">
+        <Panel title="ML Risk Classification" icon={Brain}>
+          <BarList data={mlRiskDistribution(events)} total={events.length || 1} />
+          <span className="ml-model-note">
+            {RISK_MODEL_INFO.name} v{RISK_MODEL_INFO.version} · {RISK_MODEL_INFO.features.length} features ·
+            held-out accuracy {(RISK_MODEL_INFO.metrics.accuracy * 100).toFixed(1)}%
+          </span>
+        </Panel>
         <Panel title="Risk Matrix" icon={Gauge}>
           <RiskMatrix events={events} />
         </Panel>
@@ -985,6 +1001,42 @@ function FactorList({ factors }) {
       {factors.map((factor) => (
         <span key={factor.feature}>{factor.feature.replaceAll("_", " ")} <strong>{factor.contribution_pct}%</strong></span>
       ))}
+    </div>
+  );
+}
+
+function MlRiskCard({ event }) {
+  if (!event?.ml_risk_level) {
+    return <p className="briefing-text">Model output unavailable for this event.</p>;
+  }
+  const probabilities = event.ml_probabilities || {};
+  return (
+    <div className="ml-risk-card">
+      <div className="ml-risk-head">
+        <RiskBadge risk={event.ml_risk_level} />
+        <strong>{event.ml_confidence}% confidence</strong>
+        <span>{RISK_MODEL_INFO.algorithm}</span>
+      </div>
+      <div className="ml-prob-list">
+        {RISK_MODEL_INFO.classes.map((name) => {
+          const value = Number(probabilities[name] || 0);
+          return (
+            <div className="ml-prob-row" key={name}>
+              <span>{name}</span>
+              <div className="ml-prob-track">
+                <div className={`ml-prob-fill ${RISK_CLASS[name] || "low"}`} style={{ width: `${Math.round(value * 100)}%` }} />
+              </div>
+              <strong>{(value * 100).toFixed(1)}%</strong>
+            </div>
+          );
+        })}
+      </div>
+      <p className="briefing-text">{event.ml_explanation}</p>
+      <FactorList factors={event.ml_contributors || []} />
+      <span className="ml-model-note">
+        {RISK_MODEL_INFO.name} v{RISK_MODEL_INFO.version} · held-out accuracy {(RISK_MODEL_INFO.metrics.accuracy * 100).toFixed(1)}% ·
+        macro F1 {RISK_MODEL_INFO.metrics.macro_f1.toFixed(2)} · {RISK_MODEL_INFO.metrics.train_samples.toLocaleString()} training samples
+      </span>
     </div>
   );
 }
