@@ -2165,3 +2165,19 @@ input[type="range"]::-moz-range-thumb {
   text-transform: uppercase;
   color: rgba(49, 230, 255, 0.75);
 }
+
+
+/* ---------- ML risk classification ---------- */
+.ml-risk-card { display: flex; flex-direction: column; gap: 12px; }
+.ml-risk-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 12px; }
+.ml-risk-head span { color: rgba(220, 235, 255, 0.55); font-size: 11px; letter-spacing: 0.02em; }
+.ml-prob-list { display: flex; flex-direction: column; gap: 6px; }
+.ml-prob-row { display: grid; grid-template-columns: 68px 1fr 52px; align-items: center; gap: 10px; font-size: 11px; }
+.ml-prob-row strong { text-align: right; font-variant-numeric: tabular-nums; }
+.ml-prob-track { height: 6px; border-radius: 999px; background: rgba(120, 170, 220, 0.16); overflow: hidden; }
+.ml-prob-fill { height: 100%; border-radius: 999px; background: #38bdf8; transition: width 240ms ease; }
+.ml-prob-fill.low { background: #22c55e; }
+.ml-prob-fill.medium { background: #eab308; }
+.ml-prob-fill.high { background: #f97316; }
+.ml-prob-fill.critical { background: #ef4444; }
+.ml-model-note { display: block; margin-top: 8px; font-size: 10px; line-height: 1.5; color: rgba(200, 220, 245, 0.5); }

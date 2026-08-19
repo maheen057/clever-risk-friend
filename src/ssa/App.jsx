@@ -10,6 +10,7 @@ import {
   ChevronRight,
   ClipboardList,
   Cpu,
+  Brain,
   DatabaseZap,
   Download,
   FileText,
@@ -732,6 +733,13 @@ function AnalyticsPage({ analytics, events, snapshot }) {
         </Panel>
       </section>
       <section className="split-grid">
+        <Panel title="ML Risk Classification" icon={Brain}>
+          <BarList data={mlRiskDistribution(events)} total={events.length || 1} />
+          <span className="ml-model-note">
+            {RISK_MODEL_INFO.name} v{RISK_MODEL_INFO.version} · {RISK_MODEL_INFO.features.length} features ·
+            held-out accuracy {(RISK_MODEL_INFO.metrics.accuracy * 100).toFixed(1)}%
+          </span>
+        </Panel>
         <Panel title="Risk Matrix" icon={Gauge}>
           <RiskMatrix events={events} />
         </Panel>
