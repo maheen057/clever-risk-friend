@@ -17,7 +17,7 @@ function stripDevtoolsSourceInR3F() {
     name: "strip-devtools-source-in-r3f",
     enforce: "post" as const,
     transform(code: string, id: string) {
-      const file = id.split("?")[0];
+      const file = id.split("?")[0] ?? id;
       if (!/\/src\/ssa\/components\/Scene\//.test(file)) return null;
       if (!code.includes("data-tsd-source")) return null;
       return {
