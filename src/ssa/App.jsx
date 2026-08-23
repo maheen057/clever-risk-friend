@@ -604,11 +604,13 @@ function SmartFilterPage({ snapshot, smartSnapshot, platform, selectEvent, navig
           <BarList data={smart.by_class || {}} total={raw || 1} />
         </Panel>
       </section>
+      <BeforeAfterAiComparison events={platform.conjunctions} />
       <Panel title="Explainable Predictions" icon={ClipboardList}>
         <EventList events={platform.conjunctions.slice(0, 8)} onSelect={selectEvent} detailed />
       </Panel>
     </div>
   );
+
 }
 
 function CollisionPage({ event, events, selectEvent, toggleWatchlist, watchlist, download, onShowInGlobe }) {
