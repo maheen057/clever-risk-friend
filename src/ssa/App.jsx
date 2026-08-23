@@ -613,6 +613,82 @@ function SmartFilterPage({ snapshot, smartSnapshot, platform, selectEvent, navig
 
 }
 
+/**
+ * BeforeAfterAiComparison — Smart AI Filter only.
+ * Left: existing rule-based (non-ML) triage results already computed for the events.
+ * Right: the project's trained risk-classification model output (ml_risk_level),
+ * produced by classifyEvents() in src/ssa/ml/riskClassifier.js. No thresholds, no mock data.
+ */
+function BeforeAfterAiComparison({ events }) {
+  const list = events || [];
+  const levels = ["Critical", "High", "Medium", "Low"];
+
+  const before = { total: list.length };
+  const after = { total: list.filter((event) => event.ml_risk_level).length };
+  for (const level of levels) {
+    before[level] = list.filter((event) => event.risk_level === level).length;
+    after[level] = list.filter((event) => event.ml_risk_level === level).length;
+  }
+
+  const beforeWatch = before.Critical + before.High + before.Medium;
+  const afterWatch = after.Critical + after.High + after.Medium;
+  const avgConfidence = after.total
+    ? Math.round(list.reduce((sum, event) => sum + (Number(event.ml_confidence) || 0), 0) / after.total)
+    : 0;
+  const changed = list.filter((event) => event.ml_risk_level && event.ml_risk_level !== event.risk_level).length;
+
+  return (
+    <section className="ai-compare-grid">
+      <Panel title="Before AI" icon={Filter}>
+        <p className="briefing-text">Rule-based screening only — probability, covariance and priority thresholds. No ML model applied.</p>
+        <div className="ai-compare-total">
+          <span>Total objects/events</span>
+          <strong>{formatNumber(before.total)}</strong>
+        </div>
+        <div className="ai-compare-rows">
+          {levels.map((level) => (
+            <div className="ai-compare-row" key={level}>
+              <span className={`ai-compare-dot ${RISK_CLASS[level] || "low"}`} />
+              <span>{level} risk</span>
+              <strong>{formatNumber(before[level])}</strong>
+            </div>
+          ))}
+        </div>
+        <small className="ml-model-note">Watchlist under rule-based filter: {formatNumber(beforeWatch)}</small>
+      </Panel>
+
+      <div className="ai-compare-arrow">
+        <Brain size={26} />
+        <strong>Apply AI</strong>
+        <span>{RISK_MODEL_INFO.algorithm}</span>
+      </div>
+
+      <Panel title="After AI" icon={Brain}>
+        <p className="briefing-text">Based on AI/ML risk classification — {RISK_MODEL_INFO.name} v{RISK_MODEL_INFO.version} scores every event in-browser.</p>
+        <div className="ai-compare-total accent">
+          <span>Total objects/events classified</span>
+          <strong>{formatNumber(after.total)}</strong>
+        </div>
+        <div className="ai-compare-rows">
+          {levels.map((level) => (
+            <div className="ai-compare-row" key={level}>
+              <span className={`ai-compare-dot ${RISK_CLASS[level] || "low"}`} />
+              <span>{level} risk</span>
+              <strong>{formatNumber(after[level])}</strong>
+            </div>
+          ))}
+        </div>
+        <small className="ml-model-note">
+          Watchlist after AI: {formatNumber(afterWatch)} · reclassified vs rule-based: {formatNumber(changed)} ·
+          avg model confidence {avgConfidence}% · held-out accuracy {(RISK_MODEL_INFO.metrics.accuracy * 100).toFixed(1)}%
+        </small>
+      </Panel>
+    </section>
+  );
+}
+
+
+
 function CollisionPage({ event, events, selectEvent, toggleWatchlist, watchlist, download, onShowInGlobe }) {
   if (!event) return <EmptyState title="No conjunctions detected" text="The current catalog did not produce candidate events." />;
 
